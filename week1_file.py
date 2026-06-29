@@ -1,71 +1,67 @@
 import pandas as pd
 import glob
+import os
 
-# =========================
-# Load all monthly files
-# =========================
+os.makedirs("output", exist_ok=True)
 
-files = sorted(
-    glob.glob("2024 Data/CRMLSListing2024*.csv")
-)
+# Load, combine, and filter Listing files
+all_listing_files = sorted(glob.glob("Data File/CRMLSListing*.csv"))
+print(all_listing_files)
+print("Listing files found:", len(all_listing_files))
 
-dfs = []
+listing_chunks = []
+total_row_count_before_concat = 0
 
-total_before_concat = 0
-
-for file in files:
-
+for file in all_listing_files:
     df = pd.read_csv(file)
 
-    print(f"{file}: {len(df)} rows")
+    if "_filled" in file:
+        df = df.iloc[:, :-2]
 
-    total_before_concat += len(df)
+    total_row_count_before_concat += len(df)
+    listing_chunks.append(df)
 
-    dfs.append(df)
+combined_listings = pd.concat(listing_chunks, ignore_index=True)
 
-print(
-    f"Total rows before concatenation: {total_before_concat}"
-)
+print(f"Listing row count before concatenation: {total_row_count_before_concat}")
+print(f"Listing row count after concatenation: {len(combined_listings)}")
 
-# =========================
-# Concatenate
-# =========================
-
-listing_df = pd.concat(
-    dfs,
-    ignore_index=True
-)
-
-print(
-    f"Rows after concatenation: {len(listing_df)}"
-)
-
-# =========================
-# Residential Filter
-# =========================
-
-print(
-    f"Rows before Residential filter: {len(listing_df)}"
-)
-
-listing_df = listing_df[
-    listing_df["PropertyType"] == "Residential"
+filtered_listings = combined_listings[
+    combined_listings["PropertyType"] == "Residential"
 ]
 
-print(
-    f"Rows after Residential filter: {len(listing_df)}"
-)
+print(f"Listing row count after Residential filter: {len(filtered_listings)}")
 
-# =========================
-# Save Output
-# =========================
+filtered_listings.to_csv("output/listing.csv", index=False)
 
-listing_df.to_csv(
-    "Combined_Residential_Listings.csv",
-    index=False
-)
 
-print(
-    "Combined_Residential_Listings.csv created successfully."
-)
+# Load, combine, and filter Sold files
+all_sold_files = sorted(glob.glob("Data File/CRMLSSold*.csv"))
+print(all_sold_files)
+print("Sold files found:", len(all_sold_files))
+
+sold_chunks = []
+total_row_count_before_concat = 0
+
+for file in all_sold_files:
+    df = pd.read_csv(file)
+
+    if "_filled" in file:
+        df = df.iloc[:, :-2]
+
+    total_row_count_before_concat += len(df)
+    sold_chunks.append(df)
+
+combined_sold = pd.concat(sold_chunks, ignore_index=True)
+
+print(f"Sold row count before concatenation: {total_row_count_before_concat}")
+print(f"Sold row count after concatenation: {len(combined_sold)}")
+
+filtered_sold = combined_sold[
+    combined_sold["PropertyType"] == "Residential"
+]
+
+print(f"Sold row count after Residential filter: {len(filtered_sold)}")
+
+filtered_sold.to_csv("output/sold.csv", index=False)
 
